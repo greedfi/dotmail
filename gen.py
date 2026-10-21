@@ -267,6 +267,32 @@ def make_link(data, limit):
         if len(p) <= limit: return LINK_BASE + p, len(p), trim
     return None, len(p), trim
 
+PBKDF2_ITERS = 310000
+def load_passcode(path):
+    try:
+        p = json.load(open(path)); return str(p["passcode"]) if p.get("passcode") else None
+    except FileNotFoundError: return None
+def _aesgcm():
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    except ImportError:
+        import subprocess
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "cryptography"], stdout=sys.stderr, stderr=sys.stderr)
+        try: from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        except ImportError: return None
+    return AESGCM
+def encrypt_payload(raw_b64, passcode):
+    """#e= payload: base64url(version 1 | iterations u32 BE | salt 16 | iv 12 | AES-256-GCM(deflate-raw JSON) + tag).
+    Key = PBKDF2-HMAC-SHA256(passcode, salt, iterations). Returns None if encryption is unavailable."""
+    import hashlib, struct
+    AESGCM = _aesgcm()
+    if not AESGCM: return None
+    comp = base64.urlsafe_b64decode(raw_b64 + "=" * (-len(raw_b64) % 4))
+    salt, iv = os.urandom(16), os.urandom(12)
+    key = hashlib.pbkdf2_hmac("sha256", passcode.encode("utf-8"), salt, PBKDF2_ITERS, 32)
+    blob = bytes([1]) + struct.pack(">I", PBKDF2_ITERS) + salt + iv + AESGCM(key).encrypt(iv, comp, None)
+    return base64.urlsafe_b64encode(blob).decode().rstrip("=")
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", help="input JSON (default: built-in fictional demo)")
@@ -283,8 +309,22 @@ if __name__ == "__main__":
     ap.add_argument("--settings", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings.json"))
     ap.add_argument("--link", action="store_true", help="also print a one-tap https://greedfi.github.io/dotmail/#m=... link (payload length on stderr); exit 3 with no stdout if longer than --link-max")
     ap.add_argument("--link-max", type=int, default=30000)
+    ap.add_argument("--passcode-file", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "passcode.json"), help="optional link passcode (when present, --link makes encrypted #e= links)")
+    ap.add_argument("--set-passcode", action="store_true", help="read a passcode from stdin (or env DOTMAIL_PASSCODE) and store it for encrypted links")
+    ap.add_argument("--clear-passcode", action="store_true"); ap.add_argument("--passcode-status", action="store_true", help="print on/off")
     ap.add_argument("--set", nargs="+", metavar="K=V"); ap.add_argument("--set-code")
     A = ap.parse_args()
+    if A.passcode_status: print("on" if load_passcode(A.passcode_file) else "off"); sys.exit(0)
+    if A.clear_passcode:
+        try: os.remove(A.passcode_file)
+        except FileNotFoundError: pass
+        print("off"); sys.exit(0)
+    if A.set_passcode:
+        pc = os.environ.get("DOTMAIL_PASSCODE") or sys.stdin.readline().rstrip("\r\n")
+        if len(pc) < 4: sys.exit("passcode must be at least 4 characters")
+        fd = os.open(A.passcode_file + ".tmp", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f: json.dump({"salt": base64.b64encode(os.urandom(16)).decode(), "passcode": pc}, f)
+        os.chmod(A.passcode_file + ".tmp", 0o600); os.replace(A.passcode_file + ".tmp", A.passcode_file); print("on"); sys.exit(0)
     if A.set or A.set_code:
         cur = load_settings(A.settings).get("settings", {})
         if A.set_code:
@@ -368,5 +408,13 @@ if __name__ == "__main__":
         url, n, trim = make_link(data, A.link_max)
         print("link payload: %d chars%s" % (n, " (long bodies trimmed to %d)" % trim if trim else ""), file=sys.stderr)
         if not url: print("link too long (> --link-max %d): send the file instead" % A.link_max, file=sys.stderr); sys.exit(3)
+        pc = load_passcode(A.passcode_file)
+        if pc:
+            print("WARNING: passcode lock is on, but the .mail file itself (%s) is NOT encrypted; tell the owner if you send the file instead of the link." % A.out, file=sys.stderr)
+            enc = encrypt_payload(url.split("#m=", 1)[1], pc)
+            if not enc: print("passcode is set but encryption is unavailable (install the 'cryptography' package); refusing to print an unencrypted link", file=sys.stderr); sys.exit(4)
+            if len(enc) > A.link_max: print("encrypted link too long (> --link-max %d): send the file instead" % A.link_max, file=sys.stderr); sys.exit(3)
+            print("encrypted link payload: %d chars" % len(enc), file=sys.stderr)
+            url = LINK_BASE.replace("#m=", "#e=") + enc
         print(url); sys.exit(0)
     print(A.out, {c: sum(t["category"] == c for t in data["threads"]) for c in CATS})

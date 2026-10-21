@@ -10,6 +10,8 @@ This repo is the page generator for the **.mail Grok Bot template**: https://x.a
 
 **One-tap links.** Instead of a file, a bot can send a link: `python3 gen.py --data in.json --out page.html --link` also prints `https://greedfi.github.io/dotmail/#m=<payload>` (compressed page data in the URL fragment, which browsers never send to a server; the payload length goes to stderr). If it is longer than `--link-max` (default 30000 chars) nothing is printed and the exit code is 3: send the file instead. The viewer decodes the link locally, removes it from the address bar and remembers that inbox on the device until you tap **Forget this inbox**. The site can be installed to the home screen (web app manifest; the service worker caches only the site's own files).
 
+**Optional passcode lock (off by default).** `echo 'your passcode' | python3 gen.py --set-passcode` (or `DOTMAIL_PASSCODE=... python3 gen.py --set-passcode`) stores it in `passcode.json` next to `gen.py` (mode 600, never printed). While it is set, `--link` makes `#e=` links: the compressed page data encrypted with AES-256-GCM, key from PBKDF2-HMAC-SHA256 (310,000 iterations, fresh 16-byte salt and 12-byte IV per link). The viewer asks for the passcode and decrypts on the device; it only ever remembers the encrypted link. If encryption is unavailable gen.py exits 4 instead of printing an unencrypted link. Note: the .mail **file** itself is not encrypted (gen.py warns). `--passcode-status` prints on/off; `--clear-passcode` removes it.
+
 **Keeping `docs/` in sync:** after changing `template.html` or the demo data, run `./sync-docs.sh` (copies the template and rebuilds `docs/demo.html`).
 
 ## Files
