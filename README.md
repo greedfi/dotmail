@@ -4,6 +4,10 @@
 
 This repo is the page generator for the **.mail Grok Bot template**: https://x.ai/bot/HdN8nshqGbNy_Le0fSi_6
 
+## Open in your browser
+
+**https://greedfi.github.io/dotmail/** opens the .mail page (or its JSON data) your bot sent you, right in your browser. It is a static page with no server, no accounts and no tracking: the file is read locally and shown in a locked-down sandbox, and your mail is never uploaded. Hit **Try the demo** to see fictional example mail. The site lives in [`docs/`](docs/).
+
 ## Files
 
 | File | Purpose |
