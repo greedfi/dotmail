@@ -5,6 +5,13 @@
 <meta name="referrer" content="no-referrer">
 <title>.mail viewer</title>
 <link rel="icon" href="logo.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#101010">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content=".mail">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
 :root{--bg:#101010;--fg:#e7e9ea;--mut:#8b98a5;--line:#2f3336;--acc:#1d9bf0;color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -45,7 +52,7 @@ footer{margin-top:28px;font-size:12px;color:var(--mut)}footer a{color:var(--mut)
 <footer><a href="https://github.com/greedfi/dotmail">Source on GitHub</a></footer>
 <input type="file" id="file" accept=".html,.htm,.json,text/html,application/json" hidden>
 </div></main>
-<section class="viewer" id="viewer"><div class="bar"><span class="nm" id="nm"></span><button type="button" id="close">Close</button></div>
+<section class="viewer" id="viewer"><div class="bar"><span class="nm" id="nm"></span><button type="button" id="forgetV" hidden>Forget this inbox</button><button type="button" id="close">Close</button></div>
 <iframe id="frame" sandbox="allow-scripts" referrerpolicy="no-referrer" title=".mail inbox"></iframe></section>
 <script src="app.js"></script>
 </body></html>

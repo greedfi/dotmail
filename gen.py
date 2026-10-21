@@ -234,6 +234,39 @@ def load_profile(path):
     prof = {"name": str(p.get("name") or ""), "handle": str(p.get("handle") or ""), "avatarDataUri": uri}
     return {k: v for k, v in prof.items() if v} or None
 
+LINK_BASE = "https://greedfi.github.io/dotmail/#m="
+def _small_avatar(uri):
+    """Re-encode the avatar as a ~96px JPEG for links (needs Pillow; otherwise it is dropped)."""
+    try:
+        import io; from PIL import Image
+        im = Image.open(io.BytesIO(base64.b64decode(uri.split(",", 1)[1]))).convert("RGB"); im.thumbnail((96, 96))
+        b = io.BytesIO(); im.save(b, "JPEG", quality=70, optimize=True)
+        return "data:image/jpeg;base64," + base64.b64encode(b.getvalue()).decode()
+    except Exception: return None
+def link_payload(data, trim=None):
+    """base64url(deflate-raw(compact JSON)) of the page data, for the hosted viewer's #m= links."""
+    import zlib, copy
+    d = copy.deepcopy(data)
+    prof = d.get("profile") or {}
+    if prof.get("avatarDataUri"):
+        a = _small_avatar(prof["avatarDataUri"])
+        if a and len(a) < len(prof["avatarDataUri"]): prof["avatarDataUri"] = a
+        elif not a: prof.pop("avatarDataUri")
+    for t in d.get("threads", []):
+        for m in t.get("messages", []):
+            if not m.get("cc"): m.pop("cc", None)
+            if not m.get("attachments"): m.pop("attachments", None)
+            if trim and len(m.get("body") or "") > trim:
+                m["body"] = m["body"][:trim].rstrip() + "\n\n[\u2026 trimmed to fit the link; open the .mail file for the full message]"
+    j = json.dumps(d, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    c = zlib.compressobj(9, zlib.DEFLATED, -15)
+    return base64.urlsafe_b64encode(c.compress(j) + c.flush()).decode().rstrip("=")
+def make_link(data, limit):
+    for trim in (None, 4000, 1500, 600):
+        p = link_payload(data, trim)
+        if len(p) <= limit: return LINK_BASE + p, len(p), trim
+    return None, len(p), trim
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", help="input JSON (default: built-in fictional demo)")
@@ -248,6 +281,8 @@ if __name__ == "__main__":
     ap.add_argument("--static", action="store_true", help="script-free page (static.py): no JS, dark, <details> threads")
     ap.add_argument("--search", help="search.json {query, filters, ids:[thread ids in result order]}: build a .mail search results page (same list styling; add --static for Tesla)")
     ap.add_argument("--settings", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings.json"))
+    ap.add_argument("--link", action="store_true", help="also print a one-tap https://greedfi.github.io/dotmail/#m=... link (payload length on stderr); exit 3 with no stdout if longer than --link-max")
+    ap.add_argument("--link-max", type=int, default=30000)
     ap.add_argument("--set", nargs="+", metavar="K=V"); ap.add_argument("--set-code")
     A = ap.parse_args()
     if A.set or A.set_code:
@@ -329,4 +364,9 @@ if __name__ == "__main__":
     if A.cache:
         c["lastPage"] = {"path": os.path.abspath(A.out), "snapshot": data["snapshot"], "snapshotIso": src["snapshot"], "threads": len(data["threads"])}
         save_cache(A.cache, c)
+    if A.link:
+        url, n, trim = make_link(data, A.link_max)
+        print("link payload: %d chars%s" % (n, " (long bodies trimmed to %d)" % trim if trim else ""), file=sys.stderr)
+        if not url: print("link too long (> --link-max %d): send the file instead" % A.link_max, file=sys.stderr); sys.exit(3)
+        print(url); sys.exit(0)
     print(A.out, {c: sum(t["category"] == c for t in data["threads"]) for c in CATS})
