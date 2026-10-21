@@ -90,6 +90,7 @@ window.addEventListener('hashchange',function(){if(location.hash.indexOf('#m=')=
   var T=$('itipText');
   if(ios){if(/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|DuckDuckGo|Instagram|FBAN|FBAV|Line\//.test(ua)||!/Safari/.test(ua))T.textContent='Open this page in Safari first, then tap Share and Add to Home Screen.';
     else{T.innerHTML='Tap the Share button <svg viewBox="0 0 24 24" aria-label="Share"><path d="M12 15V3M8 7l4-4 4 4M6 11H5v10h14V11h-1"/></svg> then <b>Add to Home Screen</b>.'}}
+  else if(/SamsungBrowser/.test(ua))T.textContent='Tap the \u2261 menu, then Add page to, then Home screen.';
   else T.textContent='Tap the \u22ee menu, then Add to Home screen or Install app.';
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;T.textContent='Open it like an app, right from your Home Screen.';$('itipInstall').hidden=false});
   $('itipInstall').onclick=function(){if(!deferred)return;deferred.prompt();deferred.userChoice.then(function(c){if(c&&c.outcome==='accepted')done()},function(){});deferred=null;$('itipInstall').hidden=true};
