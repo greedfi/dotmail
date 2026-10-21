@@ -25,21 +25,19 @@ function handle(text,name,rem){
   if(m){try{d=JSON.parse(m[1])}catch(e){d=null}}
   if(d&&Array.isArray(d.threads))return fromData(d,done);
   done(t)}
-function readFile(f){if(!f)return;if(f.size>50*1024*1024)return err('That file is too large.');
-  var r=new FileReader();r.onload=function(){handle(String(r.result),f.name,$('rem').checked)};r.onerror=function(){err('Could not read that file.')};r.readAsText(f)}
 // #m=<base64url(deflate-raw(JSON))> links: decoded locally, never sent anywhere (fragments are not sent to servers).
 function b64u(p){var s=p.replace(/-/g,'+').replace(/_/g,'/');s+='==='.slice((s.length+3)%4);var bin=atob(s),b=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);return b}
 function oldBrowser(){if(typeof DecompressionStream==='undefined'||typeof Response==='undefined'){err('This browser is too old to open .mail links. Ask your bot for the .mail file instead.');return true}return false}
 function inflate(b,enc){var ds;try{ds=new DecompressionStream('deflate-raw')}catch(e){return err('This browser cannot open .mail links. Ask your bot for the .mail file instead.')}
-  new Response(new Blob([b]).stream().pipeThrough(ds)).text().then(function(txt){var d;try{d=JSON.parse(txt)}catch(e){return err('This .mail link is damaged or incomplete.')}
-    fromData(d,function(html){var nm=(d.inbox?d.inbox+' ':'')+(enc?'(locked link)':'(from link)');if(enc)remember(null,nm,enc);else remember(html,nm);unlockDone();show(html,nm)})},function(){err('This .mail link is damaged or incomplete.')})}
+  new Response(new Blob([b]).stream().pipeThrough(ds)).text().then(function(txt){var d;try{d=JSON.parse(txt)}catch(e){return err(CUT)}
+    fromData(d,function(html){var nm=(d.inbox?d.inbox+' ':'')+(enc?'(locked link)':'(from link)');if(enc)remember(null,nm,enc);else remember(html,nm);unlockDone();show(html,nm)})},function(){err(CUT)})}
 function fromLink(p){history.replaceState(null,'',location.pathname+location.search);if(oldBrowser())return;
-  var b;try{b=b64u(p)}catch(e){return err('This .mail link is damaged or incomplete.')}inflate(b)}
+  var b;try{b=b64u(p)}catch(e){return err(CUT)}inflate(b)}
 // #e= locked links: version 1 | iterations (u32 BE) | salt 16 | iv 12 | AES-256-GCM ciphertext+tag. Only this encrypted form is ever stored.
 var pendingEnc=null;
 function fromLocked(p,name){history.replaceState(null,'',location.pathname+location.search);if(oldBrowser())return;
   if(!window.crypto||!crypto.subtle)return err('This browser cannot unlock .mail links (needs a secure https page).');
-  try{var b=b64u(p);if(b[0]!==1||b.length<34)throw 0}catch(e){return err('This .mail link is damaged or incomplete.')}
+  try{var b=b64u(p);if(b[0]!==1||b.length<34)throw 0}catch(e){return err(CUT)}
   pendingEnc=p;document.body.classList.remove('viewing');document.body.classList.add('locked');$('lock').hidden=false;$('lockErr').textContent='';$('pc').value='';
   $('lockForget').hidden=!(getLast()&&getLast().enc===p);setTimeout(function(){$('pc').focus()},50)}
 function unlockDone(){document.body.classList.remove('locked');$('lock').hidden=true;pendingEnc=null}
@@ -51,27 +49,29 @@ $('lockForm').onsubmit=function(ev){ev.preventDefault();var p=pendingEnc;if(!p)r
     function(){$('unlock').disabled=false;$('lockErr').textContent='Wrong passcode';$('pc').select()})};
 $('lockForget').onclick=function(){forget();unlockDone()};
 function refreshLast(){var v=getLast();$('last').style.display=v?'flex':'none';if(v)$('lastName').textContent='Remembered: '+v.name}
-$('openBtn').onclick=function(){$('file').value='';$('file').click()};
-$('file').onchange=function(){readFile(this.files[0])};
 $('demoBtn').onclick=function(){$('frame').removeAttribute('srcdoc');$('frame').src='demo.html';$('nm').textContent='Demo inbox (fictional)';$('forgetV').hidden=true;$('close').textContent='Close';document.body.classList.add('viewing');if(getLast())document.body.classList.remove('app-empty');err('')};
 $('close').onclick=close;
 $('reopen').onclick=function(){var v=getLast();if(v&&v.enc)fromLocked(v.enc,v.name);else if(v)show(v.html,v.name);else err('Nothing remembered.')};
 $('forget').onclick=forget;
 $('forgetV').onclick=function(){forget();close()};
-var dz=$('drop');
-['dragenter','dragover'].forEach(function(e){document.addEventListener(e,function(ev){ev.preventDefault();dz.classList.add('over')})});
-['dragleave','drop'].forEach(function(e){document.addEventListener(e,function(ev){ev.preventDefault();if(e==='drop'||ev.target===document.documentElement)dz.classList.remove('over')})});
-document.addEventListener('drop',function(ev){var f=ev.dataTransfer&&ev.dataTransfer.files[0];if(f&&!document.body.classList.contains('viewing'))readFile(f)});
 // Paste a .mail link (needed on iPhone: the Home Screen app has its own storage, separate from Safari).
-function openLinkText(t){t=String(t||'').trim();var i=t.indexOf('#');if(i>=0)t=t.slice(i+1);t=t.replace(/\s+/g,'');
-  if(/^m=[A-Za-z0-9_-]+$/.test(t)){$('linkIn').value='';fromLink(t.slice(2));return true}
-  if(/^e=[A-Za-z0-9_-]+$/.test(t)){$('linkIn').value='';fromLocked(t.slice(2));return true}
-  err('That is not a .mail link. Copy the whole link your bot sent (it contains #m= or #e=).');return false}
+// Lenient: full URL, markdown/<...> wrapped, '#m=…', 'm=…', %23m%3D…, or a bare payload; whitespace anywhere is ignored.
+function parseLink(t){t=String(t||'').replace(/\s+/g,'');if(!t)return null;
+  t=t.replace(/%23/gi,'#').replace(/%3D/gi,'=');
+  var m=/(?:^|[#?&\/(<\[\]"'])([me])=([A-Za-z0-9_\-+\/=]*)/.exec(t)||/^([me])=(.*)$/.exec(t),k='m',p;
+  if(m){k=m[1];p=m[2]}else if(/^[A-Za-z0-9_\-+\/=]{16,}$/.test(t))p=t;else if(/[#&]?[me]=/.test(t)){m=/([me])=(.*)$/.exec(t);k=m[1];p=m[2]}else return null;
+  p=p.replace(/\+/g,'-').replace(/\//g,'_').replace(/[^A-Za-z0-9_-]/g,'');
+  return p?{k:k,p:p}:null}
+var CUT='This link looks cut off. Go back to your bot\'s message, long-press the link, choose Copy Link, and paste it here again.';
+function openLinkText(t){var r=parseLink(t);
+  if(!r){err('That is not a .mail link. Copy the whole link your bot sent (it contains #m= or #e=).');return false}
+  $('linkIn').value='';if(r.k==='e')fromLocked(r.p);else fromLink(r.p);return true}
+$('linkIn').onkeydown=function(ev){if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();openLinkText(this.value)}};
 $('paste').onsubmit=function(ev){ev.preventDefault();openLinkText($('linkIn').value)};
-var canRead=!!(navigator.clipboard&&navigator.clipboard.readText);if(canRead)$('pasteBtn').hidden=false;
-$('pasteBtn').onclick=function(){navigator.clipboard.readText().then(function(t){$('linkIn').value=t||'';if(t)openLinkText(t)},function(){$('pasteBtn').hidden=true;$('linkIn').focus();err('Long-press the field and choose Paste.')})};
+var canRead=!!(navigator.clipboard&&navigator.clipboard.readText);
+$('pasteBtn').onclick=function(){if(!canRead){$('linkIn').focus();return err('Long-press the field and choose Paste.')}navigator.clipboard.readText().then(function(t){$('linkIn').value=t||'';if(t)openLinkText(t);else $('linkIn').focus()},function(){$('linkIn').focus();err('Long-press the field and choose Paste.')})};
 $('pasteNew').onclick=function(){function manual(){close();$('linkIn').focus()}
-  if(!canRead)return manual();navigator.clipboard.readText().then(function(t){if(!t||!/#?[me]=[A-Za-z0-9_-]{8,}/.test(t))return manual();openLinkText(t)},manual)};
+  if(!canRead)return manual();navigator.clipboard.readText().then(function(t){if(!parseLink(t))return manual();openLinkText(t)},manual)};
 var STANDALONE=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
 if(STANDALONE&&!getLast()){document.body.classList.add('app-empty');var cd=$('paste').parentNode;cd.insertBefore($('paste'),cd.querySelector('p').nextSibling)}
 refreshLast();

@@ -33,15 +33,14 @@
 .card{width:100%;max-width:520px;text-align:center}
 .card svg.lg{width:150px;height:auto;color:var(--fg);margin-bottom:18px}
 h1{font-size:22px;margin:0 0 6px;font-weight:700}p{margin:0;color:var(--mut)}
-.drop{margin:26px 0 16px;border:1.5px dashed var(--line);border-radius:16px;padding:30px 16px;transition:.15s}
-.drop.over{border-color:var(--acc);background:rgba(29,155,240,.08)}
+.more{margin:12px 0 0;font-size:13px;color:var(--mut)}.more button.lnk{font:inherit;font-weight:400;padding:0;border:0;border-radius:0;background:none;color:var(--mut);text-decoration:underline;cursor:pointer}.more button.lnk:hover{color:var(--fg)}
 .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 button,.btn{font:inherit;font-weight:700;border-radius:999px;padding:10px 20px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
 button.pri{background:var(--fg);color:#0f1419;border-color:var(--fg)}
 button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .small{font-size:13px;color:var(--mut);margin-top:12px}
 .err{color:#f4212e;font-size:14px;min-height:20px;margin-top:8px}
-label.rem{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--mut);margin-top:10px;cursor:pointer}
+label.rem{display:inline-flex;gap:4px;align-items:center;font-size:13px;color:var(--mut);cursor:pointer;vertical-align:middle}
 .last{margin-top:16px;font-size:14px;display:none;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
 .last button{padding:6px 14px;font-size:13px}
 .viewer{position:fixed;inset:0;display:none;flex-direction:column}
@@ -59,8 +58,8 @@ footer{margin-top:28px;font-size:12px;color:var(--mut)}footer a{color:var(--mut)
 .pc{display:block;width:100%;max-width:300px;margin:22px auto 0;font:inherit;font-size:17px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:#16181c;color:var(--fg);text-align:center}
 .pc:focus{outline:2px solid var(--acc);outline-offset:1px;border-color:transparent}
 .paste{margin:24px 0 0;text-align:left}.pl{display:block;font-weight:700;font-size:14px;margin-bottom:8px}
-.prow{display:flex;gap:8px}.prow input{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#16181c;color:var(--fg)}
-.prow input:focus{outline:2px solid var(--acc);outline-offset:1px;border-color:transparent}.prow button{padding:10px 16px;flex:none}
+.prow{display:flex;gap:8px}.prow textarea{resize:none;height:44px;line-height:22px;overflow:hidden;white-space:nowrap;flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#16181c;color:var(--fg)}
+.prow textarea:focus{outline:2px solid var(--acc);outline-offset:1px;border-color:transparent}.prow button{padding:10px 16px;flex:none}
 .phint{font-size:12.5px;color:var(--mut);margin-top:6px;display:none}body.app-empty .phint{display:block}
 body.app-empty .paste{margin:26px 0 8px;padding:16px;border:1px solid var(--acc);border-radius:16px;background:rgba(29,155,240,.07)}
 @media (max-width:420px){.bar{gap:6px}.bar button{padding:5px 10px}}
@@ -68,20 +67,14 @@ body.app-empty .paste{margin:26px 0 8px;padding:16px;border:1px solid var(--acc)
 <main class="welcome"><div class="card">
 <svg class="lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 36" role="img" aria-label=".mail"><g class="lg-bot" transform="translate(-4 -3.5)" style="stroke:none"><circle class="lg-ball" cx="21" cy="20" r="16" style="fill:var(--acc,#1d9bf0)"/><ellipse cx="22.74" cy="14.6" rx="1.8" ry="4.7" transform="rotate(-37 22.74 14.6)" style="fill:#101010"/><ellipse cx="30.5" cy="11.2" rx="1.55" ry="4.6" transform="rotate(-37 30.5 11.2)" style="fill:#101010"/><circle cx="34" cy="33" r="4.3" style="fill:var(--fg,#e7e9ea);stroke:var(--bg,#101010);stroke-width:1.2"/></g><g class="lg-word" transform="translate(3.6 4.9) scale(.95)" style="fill:none;stroke:currentColor;stroke-width:4.2;stroke-linecap:round;stroke-linejoin:round"><path d="M38 28V18.5A4.25 4.25 0 0 1 46.5 18.5V28M46.5 18.5A4.25 4.25 0 0 1 55 18.5V28"/><ellipse cx="65" cy="21.5" rx="5.2" ry="6"/><path d="M70.2 15.5V28"/><path d="M77.5 16V28"/><circle cx="77.5" cy="9.3" r="2.4" style="fill:currentColor;stroke:none"/><path d="M85 5V28"/></g></svg>
 <h1>Your inbox, in your browser</h1>
-<p>Open the .mail file your bot sent you. It never leaves your device.</p>
+<p>Paste the .mail link your bot sent. It never leaves your device.</p>
 <form class="paste" id="paste" autocomplete="off"><label for="linkIn" class="pl">Paste your .mail link</label>
-<div class="prow"><input id="linkIn" type="text" inputmode="url" placeholder="https://greedfi.github.io/dotmail/#m=…" aria-label="Your .mail link" spellcheck="false" autocapitalize="off"><button type="button" id="pasteBtn" hidden>Paste</button><button type="submit" class="pri" id="linkOpen">Open</button></div>
+<div class="prow"><textarea id="linkIn" rows="1" wrap="off" autocorrect="off" placeholder="https://greedfi.github.io/dotmail/#m=…" aria-label="Your .mail link" spellcheck="false" autocapitalize="off"></textarea><button type="button" id="pasteBtn">Paste</button><button type="submit" class="pri" id="linkOpen">Open</button></div>
 <div class="phint" id="phint">Copy the link your bot sent, then paste it here once. .mail remembers it.</div></form>
-<div class="drop" id="drop">
-<div>Drop your .mail file here</div>
-<div class="btns"><button class="pri" id="openBtn" type="button">Open file</button><button id="demoBtn" type="button">Try the demo</button></div>
-<label class="rem"><input type="checkbox" id="rem"> Remember on this device</label>
+<div class="more"><button type="button" class="lnk" id="demoBtn">Try the demo</button></div>
 <div class="err" id="err" role="alert"></div>
-</div>
 <div class="last" id="last"><span id="lastName"></span><button type="button" id="reopen">Reopen</button><button type="button" id="forget">Forget</button></div>
-<div class="small">Accepts the .mail .html page or its JSON data. Everything runs locally: no uploads, no accounts, no tracking.</div>
 <footer><a href="https://github.com/greedfi/dotmail">Source on GitHub</a></footer>
-<input type="file" id="file" accept=".html,.htm,.json,text/html,application/json" hidden>
 </div></main>
 <main class="lock welcome" id="lock" hidden><form class="card" id="lockForm" autocomplete="off">
 <svg class="lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 36" aria-hidden="true"><g class="lg-bot" transform="translate(-4 -3.5)" style="stroke:none"><circle class="lg-ball" cx="21" cy="20" r="16" style="fill:var(--acc,#1d9bf0)"/><ellipse cx="22.74" cy="14.6" rx="1.8" ry="4.7" transform="rotate(-37 22.74 14.6)" style="fill:#101010"/><ellipse cx="30.5" cy="11.2" rx="1.55" ry="4.6" transform="rotate(-37 30.5 11.2)" style="fill:#101010"/><circle cx="34" cy="33" r="4.3" style="fill:var(--fg,#e7e9ea);stroke:var(--bg,#101010);stroke-width:1.2"/></g><g class="lg-word" transform="translate(3.6 4.9) scale(.95)" style="fill:none;stroke:currentColor;stroke-width:4.2;stroke-linecap:round;stroke-linejoin:round"><path d="M38 28V18.5A4.25 4.25 0 0 1 46.5 18.5V28M46.5 18.5A4.25 4.25 0 0 1 55 18.5V28"/><ellipse cx="65" cy="21.5" rx="5.2" ry="6"/><path d="M70.2 15.5V28"/><path d="M77.5 16V28"/><circle cx="77.5" cy="9.3" r="2.4" style="fill:currentColor;stroke:none"/><path d="M85 5V28"/></g></svg>
