@@ -12,6 +12,8 @@ This repo is the page generator for the **.mail Grok Bot template**: https://x.a
 
 **Optional passcode lock (off by default).** `echo 'your passcode' | python3 gen.py --set-passcode` (or `DOTMAIL_PASSCODE=... python3 gen.py --set-passcode`) stores it in `passcode.json` next to `gen.py` (mode 600, never printed). While it is set, `--link` makes `#e=` links: the compressed page data encrypted with AES-256-GCM, key from PBKDF2-HMAC-SHA256 (310,000 iterations, fresh 16-byte salt and 12-byte IV per link). The viewer asks for the passcode and decrypts on the device; it only ever remembers the encrypted link. If encryption is unavailable gen.py exits 4 instead of printing an unencrypted link. Note: the .mail **file** itself is not encrypted (gen.py warns). `--passcode-status` prints on/off; `--clear-passcode` removes it.
 
+**Home Screen app (iPhone):** the installed app has its own storage, separate from Safari, so the first time it opens empty: paste the link your bot sent into **Paste your .mail link** once and it is remembered. Use **Paste new link** in the top bar to switch to a newer link.
+
 **Keeping `docs/` in sync:** after changing `template.html` or the demo data, run `./sync-docs.sh` (copies the template and rebuilds `docs/demo.html`).
 
 ## Files

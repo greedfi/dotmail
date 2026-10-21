@@ -6,7 +6,7 @@ var TPL=null;
 function err(m){$('err').textContent=m||''}
 function harden(html){var m=/<head[^>]*>/i.exec(html);return m?html.slice(0,m.index+m[0].length)+CSP+html.slice(m.index+m[0].length):CSP+html}
 function getLast(){try{var v=JSON.parse(localStorage.getItem(KEY)||'null');return v&&(v.html||v.enc)?v:null}catch(e){return null}}
-function show(html,name){$('frame').removeAttribute('src');$('frame').srcdoc=harden(html);$('nm').textContent=name;$('forgetV').hidden=!getLast();$('close').textContent=getLast()?'Open another file':'Close';document.body.classList.add('viewing');err('')}
+function show(html,name){$('frame').removeAttribute('src');$('frame').srcdoc=harden(html);$('nm').textContent=name;$('forgetV').hidden=!getLast();$('close').textContent=getLast()?'Open another file':'Close';document.body.classList.add('viewing');if(getLast())document.body.classList.remove('app-empty');err('')}
 function close(){document.body.classList.remove('viewing');$('frame').removeAttribute('srcdoc');$('frame').src='about:blank';refreshLast()}
 function remember(html,name,enc){try{localStorage.setItem(KEY,JSON.stringify(enc?{name:name,enc:enc}:{name:name,html:html}));return true}catch(e){err('Opened, but it is too large to remember on this device.');return false}}
 function forget(){try{localStorage.removeItem(KEY)}catch(e){}refreshLast()}
@@ -53,7 +53,7 @@ $('lockForget').onclick=function(){forget();unlockDone()};
 function refreshLast(){var v=getLast();$('last').style.display=v?'flex':'none';if(v)$('lastName').textContent='Remembered: '+v.name}
 $('openBtn').onclick=function(){$('file').value='';$('file').click()};
 $('file').onchange=function(){readFile(this.files[0])};
-$('demoBtn').onclick=function(){$('frame').removeAttribute('srcdoc');$('frame').src='demo.html';$('nm').textContent='Demo inbox (fictional)';$('forgetV').hidden=true;$('close').textContent='Close';document.body.classList.add('viewing');err('')};
+$('demoBtn').onclick=function(){$('frame').removeAttribute('srcdoc');$('frame').src='demo.html';$('nm').textContent='Demo inbox (fictional)';$('forgetV').hidden=true;$('close').textContent='Close';document.body.classList.add('viewing');if(getLast())document.body.classList.remove('app-empty');err('')};
 $('close').onclick=close;
 $('reopen').onclick=function(){var v=getLast();if(v&&v.enc)fromLocked(v.enc,v.name);else if(v)show(v.html,v.name);else err('Nothing remembered.')};
 $('forget').onclick=forget;
@@ -62,6 +62,18 @@ var dz=$('drop');
 ['dragenter','dragover'].forEach(function(e){document.addEventListener(e,function(ev){ev.preventDefault();dz.classList.add('over')})});
 ['dragleave','drop'].forEach(function(e){document.addEventListener(e,function(ev){ev.preventDefault();if(e==='drop'||ev.target===document.documentElement)dz.classList.remove('over')})});
 document.addEventListener('drop',function(ev){var f=ev.dataTransfer&&ev.dataTransfer.files[0];if(f&&!document.body.classList.contains('viewing'))readFile(f)});
+// Paste a .mail link (needed on iPhone: the Home Screen app has its own storage, separate from Safari).
+function openLinkText(t){t=String(t||'').trim();var i=t.indexOf('#');if(i>=0)t=t.slice(i+1);t=t.replace(/\s+/g,'');
+  if(/^m=[A-Za-z0-9_-]+$/.test(t)){$('linkIn').value='';fromLink(t.slice(2));return true}
+  if(/^e=[A-Za-z0-9_-]+$/.test(t)){$('linkIn').value='';fromLocked(t.slice(2));return true}
+  err('That is not a .mail link. Copy the whole link your bot sent (it contains #m= or #e=).');return false}
+$('paste').onsubmit=function(ev){ev.preventDefault();openLinkText($('linkIn').value)};
+var canRead=!!(navigator.clipboard&&navigator.clipboard.readText);if(canRead)$('pasteBtn').hidden=false;
+$('pasteBtn').onclick=function(){navigator.clipboard.readText().then(function(t){$('linkIn').value=t||'';if(t)openLinkText(t)},function(){$('pasteBtn').hidden=true;$('linkIn').focus();err('Long-press the field and choose Paste.')})};
+$('pasteNew').onclick=function(){function manual(){close();$('linkIn').focus()}
+  if(!canRead)return manual();navigator.clipboard.readText().then(function(t){if(!t||!/#?[me]=[A-Za-z0-9_-]{8,}/.test(t))return manual();openLinkText(t)},manual)};
+var STANDALONE=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+if(STANDALONE&&!getLast()){document.body.classList.add('app-empty');var cd=$('paste').parentNode;cd.insertBefore($('paste'),cd.querySelector('p').nextSibling)}
 refreshLast();
 if(location.hash.indexOf('#m=')===0)fromLink(location.hash.slice(3));
 else if(location.hash.indexOf('#e=')===0)fromLocked(location.hash.slice(3));
