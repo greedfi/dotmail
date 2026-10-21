@@ -21,6 +21,9 @@ function handle(text,name,rem){
   function done(html){if(rem)remember(html,name);show(html,name)}
   if(s[0]==='{'){var d;try{d=JSON.parse(s)}catch(e){return err('That JSON file could not be read.')}return fromData(d,done)}
   if(!/<html|<!doctype/i.test(s.slice(0,2000)))return err('That does not look like a .mail file.');
+  var m=/<script type="application\/json" id="data">([\s\S]*?)<\/script>/.exec(t),d=null;
+  if(m){try{d=JSON.parse(m[1])}catch(e){d=null}}
+  if(d&&Array.isArray(d.threads))return fromData(d,done);
   done(t)}
 function readFile(f){if(!f)return;if(f.size>50*1024*1024)return err('That file is too large.');
   var r=new FileReader();r.onload=function(){handle(String(r.result),f.name,$('rem').checked)};r.onerror=function(){err('Could not read that file.')};r.readAsText(f)}
@@ -46,7 +49,22 @@ var dz=$('drop');
 document.addEventListener('drop',function(ev){var f=ev.dataTransfer&&ev.dataTransfer.files[0];if(f&&!document.body.classList.contains('viewing'))readFile(f)});
 refreshLast();
 if(location.hash.indexOf('#m=')===0)fromLink(location.hash.slice(3));
+else if(/^\?demo\b/.test(location.search)||location.hash==='#demo')$('demoBtn').onclick();
 else{var v=getLast();if(v)show(v.html,v.name)}
 window.addEventListener('hashchange',function(){if(location.hash.indexOf('#m=')===0)fromLink(location.hash.slice(3))});
+// Install tip: phones only, once, never when already installed.
+(function(){var KEY2='dotmail-install-tip',ua=navigator.userAgent,tip=$('itip');
+  try{if(localStorage.getItem(KEY2))return}catch(e){return}
+  var standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;if(standalone)return;
+  var ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1),android=/Android/.test(ua)&&/Mobile|Chrome/.test(ua);
+  if(!ios&&!android)return;
+  var deferred=null;function done(){tip.hidden=true;try{localStorage.setItem(KEY2,'1')}catch(e){}}
+  var T=$('itipText');
+  if(ios){if(/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|DuckDuckGo|Instagram|FBAN|FBAV|Line\//.test(ua)||!/Safari/.test(ua))T.textContent='Open this page in Safari first, then tap Share and Add to Home Screen.';
+    else{T.innerHTML='Tap the Share button <svg viewBox="0 0 24 24" aria-label="Share"><path d="M12 15V3M8 7l4-4 4 4M6 11H5v10h14V11h-1"/></svg> then <b>Add to Home Screen</b>.'}}
+  else T.textContent='Tap the \u22ee menu, then Add to Home screen.';
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;T.textContent='Open it like an app, right from your Home Screen.';$('itipInstall').hidden=false});
+  $('itipInstall').onclick=function(){if(!deferred)return;deferred.prompt();deferred.userChoice.then(function(c){if(c&&c.outcome==='accepted')done()},function(){});deferred=null;$('itipInstall').hidden=true};
+  window.addEventListener('appinstalled',done);$('itipX').onclick=done;tip.hidden=false})();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
 })();

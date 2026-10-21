@@ -3,7 +3,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src data:; connect-src 'self'; frame-src 'self' about:; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
-<title>.mail viewer</title>
+<title>.mail — your Grok Bot's inbox</title>
+<meta name="description" content="Open the .mail inbox your Grok Bot sent you, right in your browser. Nothing is uploaded: no server, no accounts, no tracking.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content=".mail">
+<meta property="og:title" content=".mail — your Grok Bot's inbox">
+<meta property="og:description" content="Open the .mail inbox your Grok Bot sent you, right in your browser. It never leaves your device.">
+<meta property="og:url" content="https://greedfi.github.io/dotmail/">
+<meta property="og:image" content="https://greedfi.github.io/dotmail/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content=".mail logo next to a fictional demo inbox">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content=".mail — your Grok Bot's inbox">
+<meta name="twitter:description" content="Open the .mail inbox your Grok Bot sent you, right in your browser. It never leaves your device.">
+<meta name="twitter:image" content="https://greedfi.github.io/dotmail/og.png">
 <link rel="icon" href="logo.svg">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -36,6 +50,11 @@ label.rem{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:va
 iframe{flex:1;width:100%;border:0;background:var(--bg)}
 body.viewing .welcome{display:none}body.viewing .viewer{display:flex}
 footer{margin-top:28px;font-size:12px;color:var(--mut)}footer a{color:var(--mut)}
+.itip{position:fixed;z-index:50;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:calc(max(8px,env(safe-area-inset-top)) + 40px);display:flex;align-items:center;gap:10px;padding:12px 12px 12px 14px;background:#16181c;color:var(--fg);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.5);font-size:14px}
+.itip[hidden]{display:none}.it-b{flex:1;min-width:0}.it-h{font-weight:700}.it-t{color:var(--mut);font-size:13px;margin-top:2px}
+.it-t svg{width:15px;height:15px;vertical-align:-2px;fill:none;stroke:var(--acc);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.it-i{padding:7px 16px;font-size:13px}.it-x{border:0;padding:6px 9px;color:var(--mut);font-size:15px;line-height:1}
+.bar{padding-top:max(6px,env(safe-area-inset-top))}
 </style></head><body>
 <main class="welcome"><div class="card">
 <svg class="lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 36" role="img" aria-label=".mail"><g class="lg-bot" transform="translate(-4 -3.5)" style="stroke:none"><circle class="lg-ball" cx="21" cy="20" r="16" style="fill:var(--acc,#1d9bf0)"/><ellipse cx="22.74" cy="14.6" rx="1.8" ry="4.7" transform="rotate(-37 22.74 14.6)" style="fill:#101010"/><ellipse cx="30.5" cy="11.2" rx="1.55" ry="4.6" transform="rotate(-37 30.5 11.2)" style="fill:#101010"/><circle cx="34" cy="33" r="4.3" style="fill:var(--fg,#e7e9ea);stroke:var(--bg,#101010);stroke-width:1.2"/></g><g class="lg-word" transform="translate(3.6 4.9) scale(.95)" style="fill:none;stroke:currentColor;stroke-width:4.2;stroke-linecap:round;stroke-linejoin:round"><path d="M38 28V18.5A4.25 4.25 0 0 1 46.5 18.5V28M46.5 18.5A4.25 4.25 0 0 1 55 18.5V28"/><ellipse cx="65" cy="21.5" rx="5.2" ry="6"/><path d="M70.2 15.5V28"/><path d="M77.5 16V28"/><circle cx="77.5" cy="9.3" r="2.4" style="fill:currentColor;stroke:none"/><path d="M85 5V28"/></g></svg>
@@ -53,6 +72,7 @@ footer{margin-top:28px;font-size:12px;color:var(--mut)}footer a{color:var(--mut)
 <input type="file" id="file" accept=".html,.htm,.json,text/html,application/json" hidden>
 </div></main>
 <section class="viewer" id="viewer"><div class="bar"><span class="nm" id="nm"></span><button type="button" id="forgetV" hidden>Forget this inbox</button><button type="button" id="close">Close</button></div>
-<iframe id="frame" sandbox="allow-scripts" referrerpolicy="no-referrer" title=".mail inbox"></iframe></section>
+<iframe id="frame" sandbox="allow-scripts" allow="clipboard-write" referrerpolicy="no-referrer" title=".mail inbox"></iframe></section>
+<div class="itip" id="itip" hidden role="dialog" aria-label="Add .mail to your Home Screen"><div class="it-b"><div class="it-h">Add .mail to your Home Screen</div><div class="it-t" id="itipText"></div></div><button type="button" class="pri it-i" id="itipInstall" hidden>Install</button><button type="button" class="it-x" id="itipX" aria-label="Dismiss">&#x2715;</button></div>
 <script src="app.js"></script>
 </body></html>
