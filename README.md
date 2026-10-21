@@ -52,3 +52,9 @@ Requires Python 3.9+ (standard library only).
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+## Announcing a new feature
+
+Edit `WHATS_NEW` near the top of the script in `template.html`, e.g.
+`var WHATS_NEW={id:"2026-10-search",title:"New: faster search",text:"Search now covers bodies.",action:{label:"Try it",open:"settings"}};`
+Use a new `id` each time (`action` is optional; `null` hides the button). Commit to main (and run `./sync-docs.sh`): every user sees the note once on their next .mail, and dismissing it or clicking the action hides it for good. Set `id` back to `""` to show nothing.

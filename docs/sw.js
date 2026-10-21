@@ -1,5 +1,5 @@
 // Caches only this site's own static files. Never touches any other request.
-var V='dotmail-v3',FILES=['./','og.png','index.html','app.js','template.html','demo.html','logo.svg','manifest.webmanifest','icon-192.png','icon-512.png','icon-180.png'];
+var V='dotmail-v4',FILES=['./','og.png','index.html','app.js','template.html','demo.html','logo.svg','manifest.webmanifest','icon-192.png','icon-512.png','icon-180.png'];
 var SCOPE=self.registration.scope,OWN=FILES.map(function(f){return new URL(f,SCOPE).href});
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(FILES)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(n){return n!==V}).map(function(n){return caches.delete(n)}))}).then(function(){return self.clients.claim()}))});

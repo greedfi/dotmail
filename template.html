@@ -226,6 +226,11 @@ body.halloween:not(.open) .pane::after{content:"";position:absolute;pointer-even
 .fr-b{font:inherit;font-weight:700;color:var(--acc);background:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer;flex:none}
 .fr-b:hover{background:rgba(127,127,127,.12)}.fr-b:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 @media (max-width:600px){.fresh{order:9;flex-basis:100%;justify-content:space-between;padding-top:2px}}
+.wn{flex:none;display:flex;align-items:flex-start;gap:10px;margin:8px 16px 0;padding:10px 8px 10px 14px;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:12px;background:var(--card,var(--bg));color:var(--fg);animation:wn-in .2s ease-out}
+.wn-b{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}.wn-t{font-weight:700}.wn-x{color:var(--mut);flex:none;min-width:32px;min-height:32px;align-items:center;justify-content:center;padding:4px}
+.wn .mx:focus-visible{outline:2px solid var(--acc);outline-offset:2px}.wn .fr-b{margin-left:auto}
+@keyframes wn-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}@media (prefers-reduced-motion:reduce){.wn{animation:none}}
+@media (max-width:600px){.wn{margin:8px 12px 0}}
 </style></head><body>
 <div class="banner"><b>Demo</b> with example data. Your real inbox appears here when you run the viewer.</div>
 <div class="top"><div class="mark"><svg class="lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 36" role="img" aria-label=".mail"><g class="lg-bot" transform="translate(-4 -3.5)" style="stroke:none"><circle class="lg-ball" cx="21" cy="20" r="16" style="fill:var(--acc,#1d9bf0)"/><ellipse cx="22.74" cy="14.6" rx="1.8" ry="4.7" transform="rotate(-37 22.74 14.6)" style="fill:#101010"/><ellipse cx="30.5" cy="11.2" rx="1.55" ry="4.6" transform="rotate(-37 30.5 11.2)" style="fill:#101010"/><circle cx="34" cy="33" r="4.3" style="fill:var(--fg,#e7e9ea);stroke:var(--bg,#101010);stroke-width:1.2"/></g><g class="lg-word" transform="translate(3.6 4.9) scale(.95)" style="fill:none;stroke:currentColor;stroke-width:4.2;stroke-linecap:round;stroke-linejoin:round"><path d="M38 28V18.5A4.25 4.25 0 0 1 46.5 18.5V28M46.5 18.5A4.25 4.25 0 0 1 55 18.5V28"/><ellipse cx="65" cy="21.5" rx="5.2" ry="6"/><path d="M70.2 15.5V28"/><path d="M77.5 16V28"/><circle cx="77.5" cy="9.3" r="2.4" style="fill:currentColor;stroke:none"/><path d="M85 5V28"/></g></svg></div><div class="meta" id="meta"></div>
@@ -241,6 +246,8 @@ body.halloween:not(.open) .pane::after{content:"";position:absolute;pointer-even
 <script type="application/json" id="data">__DATA__</script>
 <script>
 (function(){
+// What's new: set a new id (plus title/text, optional action {label:"Try it",open:"settings"}) to show a one-time note. Empty id = nothing shown.
+var WHATS_NEW={id:"",title:"",text:"",action:null};
 var D=JSON.parse(document.getElementById('data').textContent);
 var ORDER=['Needs reply','Waiting on them','FYI','Receipts','Newsletters','Spam'];
 var ICONS={'All':'M3 12l3-7h12l3 7v7H3zM3 12h5l1 3h6l1-3h5','Needs reply':'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 6 6v5','FYI':'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18zM12 11v6M12 7.5v.5','Receipts':'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6','Newsletters':'M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M7 9h7M7 13h7','Spam':'M8 3h8l5 5v8l-5 5H8l-5-5V8zM12 8v5M12 16v.5','Waiting on them':'M6 3h12M6 21h12M7 3c0 5 10 5 10 9s-10 4-10 9M17 3c0 5-10 5-10 9s10 4 10 9','Weekly recap':'M4 20V10M10 20V4M16 20v-7M22 20H2'};
@@ -449,7 +456,13 @@ document.addEventListener('focusin',function(e){var t=tgt(e);if(t)showTip(t);els
 document.addEventListener('focusout',hideTip);
 document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTip()});
 window.addEventListener('scroll',hideTip,true);
-rail();list();emptyPane();
+function whatsNew(){try{var N=WHATS_NEW;if(!N||!N.id||document.body.classList.contains('halloween')||cfg('halloween'))return;var seen=null;try{seen=localStorage.getItem('dotmail.seenNews')}catch(e){}if(seen==null)seen=ST.seenNews||window.__dmSeenNews||null;if(seen===N.id)return;
+ var c=el('div','wn');c.setAttribute('role','status');c.setAttribute('aria-label',"What's new");var b=el('div','wn-b');if(N.title)b.appendChild(el('span','wn-t',N.title));if(N.text)b.appendChild(el('span',null,N.text));
+ var done=function(){window.__dmSeenNews=N.id;var ok=false;try{localStorage.setItem('dotmail.seenNews',N.id);ok=localStorage.getItem('dotmail.seenNews')===N.id}catch(e){}if(!ok){try{ST.seenNews=N.id;save()}catch(e){}}if(c.parentNode)c.parentNode.removeChild(c)};
+ if(N.action&&N.action.label){var a=el('button','fr-b',N.action.label);a.type='button';a.onclick=function(){done();if(N.action.open==='settings')openSettings()};b.appendChild(a)}c.appendChild(b);
+ var x=el('button','mx wn-x');x.type='button';x.setAttribute('aria-label','Dismiss');x.setAttribute('data-tip','Dismiss');x.appendChild(svgI('M18 6L6 18M6 6l12 12'));x.onclick=done;c.appendChild(x);
+ var top=document.querySelector('.top');if(top&&top.parentNode)top.parentNode.insertBefore(c,top.nextSibling)}catch(e){}}
+rail();list();emptyPane();whatsNew();
 if(HP.open){var t=TH.filter(function(x){return x.id===HP.open})[0];if(t)open(t)}
 if(HP.view){var vv=HP.view==='waiting'?'Waiting on them':HP.view;if(vv.indexOf('alias:')===0)vv=vv.toLowerCase();if((vv==='recap'&&D.recap)||vv.indexOf('alias:')===0||ORDER.indexOf(vv)>=0||vv==='All'){cur=vv;rail();list()}}
 if(HP.toast||HP.copied){toast(COPIED)}
